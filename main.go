@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+// Constants
+const (
+	serverPort = ":8080"
+	apiPrefix  = "/api/product"
+)
+
+// Structs
 type Product struct {
 	ID    int    `json:"id"`
 	Name  string `json:"name"`
@@ -15,136 +22,169 @@ type Product struct {
 	Stock int    `json:"stock"`
 }
 
-var products = []Product{
-	{ID: 1, Name: "Laptop", Price: 15000000, Stock: 10},
-	{ID: 2, Name: "Smartphone", Price: 5000000, Stock: 25},
-	{ID: 3, Name: "Tablet", Price: 3000000, Stock: 15},
+type ErrorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message,omitempty"`
+}
+
+type SuccessResponse struct {
+	Message string `json:"message"`
+}
+
+// Global variables
+var (
+	products = []Product{
+		{ID: 1, Name: "Laptop", Price: 15000000, Stock: 10},
+		{ID: 2, Name: "Smartphone", Price: 5000000, Stock: 25},
+		{ID: 3, Name: "Tablet", Price: 3000000, Stock: 15},
+	}
+	nextID = 4 // ID counter untuk product baru
+)
+
+// Helper functions
+func respondJSON(w http.ResponseWriter, statusCode int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(data)
+}
+
+func respondError(w http.ResponseWriter, statusCode int, message string) {
+	respondJSON(w, statusCode, ErrorResponse{
+		Error:   http.StatusText(statusCode),
+		Message: message,
+	})
+}
+
+// Handler functions
+
+func getAllProducts(w http.ResponseWriter, r *http.Request) {
+	respondJSON(w, http.StatusOK, products)
+}
+
+func createProduct(w http.ResponseWriter, r *http.Request) {
+	var newProduct Product
+	err := json.NewDecoder(r.Body).Decode(&newProduct)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	newProduct.ID = nextID
+	nextID++
+	products = append(products, newProduct)
+
+	respondJSON(w, http.StatusCreated, newProduct)
 }
 
 func getProductByID(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/api/product/")
+	idStr := strings.TrimPrefix(r.URL.Path, apiPrefix+"/")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "Invalid Product ID", http.StatusBadRequest)
+		respondError(w, http.StatusBadRequest, "Invalid product ID")
 		return
 	}
 
 	for _, product := range products {
 		if product.ID == id {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(product)
+			respondJSON(w, http.StatusOK, product)
 			return
 		}
 	}
 
-	http.Error(w, "Product Not Found", http.StatusNotFound)
+	respondError(w, http.StatusNotFound, "Product not found")
 }
 
 func updateProduct(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/api/product/")
+	idStr := strings.TrimPrefix(r.URL.Path, apiPrefix+"/")
 	id, err := strconv.Atoi(idStr)
-
 	if err != nil {
-		http.Error(w, "Invalid Product ID", http.StatusBadRequest)
+		respondError(w, http.StatusBadRequest, "Invalid product ID")
 		return
 	}
 
-	var updateProduct Product
-	err = json.NewDecoder(r.Body).Decode(&updateProduct)
+	var updatedProduct Product
+	err = json.NewDecoder(r.Body).Decode(&updatedProduct)
 	if err != nil {
-		http.Error(w, "Invalid Request", http.StatusBadRequest)
+		respondError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	for i, product := range products {
 		if product.ID == id {
-			products[i].Name = updateProduct.Name
-			products[i].Price = updateProduct.Price
-			products[i].Stock = updateProduct.Stock
+			products[i].Name = updatedProduct.Name
+			products[i].Price = updatedProduct.Price
+			products[i].Stock = updatedProduct.Stock
 
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(products[i])
+			respondJSON(w, http.StatusOK, products[i])
 			return
 		}
 	}
 
-	http.Error(w, "Product Not Found", http.StatusNotFound)
+	respondError(w, http.StatusNotFound, "Product not found")
 }
 
 func deleteProduct(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/api/product/")
+	idStr := strings.TrimPrefix(r.URL.Path, apiPrefix+"/")
 	id, err := strconv.Atoi(idStr)
-
 	if err != nil {
-		http.Error(w, "Invalid Product ID", http.StatusBadRequest)
+		respondError(w, http.StatusBadRequest, "Invalid product ID")
 		return
 	}
 
 	for i, product := range products {
 		if product.ID == id {
 			products = append(products[:i], products[i+1:]...)
-			w.WriteHeader(http.StatusNoContent) //204
+			respondJSON(w, http.StatusOK, SuccessResponse{
+				Message: "Product deleted successfully",
+			})
 			return
 		}
 	}
 
-	http.Error(w, "Product Not Found", http.StatusNotFound)
+	respondError(w, http.StatusNotFound, "Product not found")
 }
 
-func main() {
-	// GET /api/products/{id}
-	// PUT /api/products/{id}
-	// DELETE /api/products/{id}
-	http.HandleFunc("/api/product/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+func healthCheck(w http.ResponseWriter, r *http.Request) {
+	respondJSON(w, http.StatusOK, map[string]string{
+		"status":  "OK",
+		"message": "API Running",
+	})
+}
 
+// Main function
+func main() {
+	// Route handler untuk /api/product/{id}
+	http.HandleFunc(apiPrefix+"/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case "GET":
+		case http.MethodGet:
 			getProductByID(w, r)
-		case "PUT":
+		case http.MethodPut:
 			updateProduct(w, r)
-		case "DELETE":
+		case http.MethodDelete:
 			deleteProduct(w, r)
 		default:
-			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
 	})
 
-	// GET /api/products
-	// Post /api/products
-	http.HandleFunc("/api/product", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+	// Route handler untuk /api/product
+	http.HandleFunc(apiPrefix, func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case "GET":
-			json.NewEncoder(w).Encode(products)
-		case "POST":
-			var newProduct Product
-			err := json.NewDecoder(r.Body).Decode(&newProduct)
-			if err != nil {
-				http.Error(w, "Invalid Request", http.StatusBadRequest)
-				return
-			}
-
-			newProduct.ID = len(products) + 1
-			products = append(products, newProduct)
-
-			w.WriteHeader(http.StatusCreated) //201
-			json.NewEncoder(w).Encode(newProduct)
+		case http.MethodGet:
+			getAllProducts(w, r)
+		case http.MethodPost:
+			createProduct(w, r)
+		default:
+			respondError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		}
-
 	})
 
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{
-			"status":  "OK",
-			"message": "API Running",
-		})
-	})
+	// Health check endpoint
+	http.HandleFunc("/health", healthCheck)
 
-	fmt.Println("Server running di localhost:8080")
-	err := http.ListenAndServe(":8080", nil)
+	fmt.Println("Server running di localhost" + serverPort)
+	err := http.ListenAndServe(serverPort, nil)
 	if err != nil {
-		fmt.Println("Gagal Running Server")
+		fmt.Println("Gagal running server:", err)
 	}
 }
