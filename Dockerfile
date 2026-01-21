@@ -30,6 +30,9 @@ RUN addgroup -g 1000 appuser && \
 # Copy binary from builder
 COPY --from=builder /app/kasir-api .
 
+# Copy swagger docs from builder
+COPY --from=builder /app/docs ./docs
+
 # Change ownership
 RUN chown -R appuser:appuser /app
 
