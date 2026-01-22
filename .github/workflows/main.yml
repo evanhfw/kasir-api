@@ -1,0 +1,40 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout Code
+      - uses: actions/checkout@v6.0.2
+      
+      # 2. Login ke Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 3. Build & Push Image
+      - name: Build and push
+        uses: docker/build-push-action@v6.18.0
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/kasir-api:latest
+
+      # 4. SSH ke VPS untuk update container
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/kasir-api:latest
+            docker stop kasir-api || true
+            docker rm kasir-api || true
+            docker run -d --name kasir-api -p 8888:8080 ${{ secrets.DOCKER_USERNAME }}/kasir-api:latest
