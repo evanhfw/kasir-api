@@ -32,7 +32,8 @@ jobs:
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 22
           script: |
             docker pull ${{ secrets.DOCKER_USERNAME }}/kasir-api:latest
             docker stop kasir-api || true
