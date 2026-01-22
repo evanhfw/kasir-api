@@ -12,6 +12,10 @@ RUN go mod download
 # Copy source code
 COPY . .
 
+# Install swag CLI and generate swagger docs
+RUN go install github.com/swaggo/swag/cmd/swag@latest && \
+    swag init
+
 # Build binary
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-s -w" -o kasir-api .
 

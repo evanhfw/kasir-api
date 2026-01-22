@@ -378,8 +378,9 @@ func deleteCategory(w http.ResponseWriter, r *http.Request) {
 // @license.name  Apache 2.0
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host      localhost:8080
+// @host      kasir-api.evan-homeserver.my.id
 // @BasePath  /api
+// @schemes   https http
 
 // @externalDocs.description  OpenAPI
 // @externalDocs.url          https://swagger.io/resources/open-api/
@@ -445,7 +446,7 @@ func main() {
 	// GET /health
 	http.HandleFunc("/health", healthCheck)
 
-	http.Handle("/swagger/", httpSwagger.Handler(httpSwagger.URL(("http://localhost:8080/swagger/doc.json"))))
+	http.Handle("/swagger/", httpSwagger.Handler(httpSwagger.URL("/swagger/doc.json")))
 
 	fmt.Println("Server running di localhost" + serverPort)
 	err := http.ListenAndServe(serverPort, nil)
