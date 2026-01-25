@@ -414,9 +414,9 @@ func main() {
 		}
 	})
 
-	// GET /api/category
-	// POST /api/category
-	http.HandleFunc(apiPrefix+"/category", func(w http.ResponseWriter, r *http.Request) {
+	// GET /api/categories
+	// POST /api/categories
+	http.HandleFunc(apiPrefix+"/categories", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			getAllCategories(w, r)
@@ -427,10 +427,10 @@ func main() {
 		}
 	})
 
-	// GET /api/category/{id}
-	// PUT /api/category/{id}
-	// DELETE /api/category/{id}
-	http.HandleFunc(apiPrefix+"/category/", func(w http.ResponseWriter, r *http.Request) {
+	// GET /api/categories/{id}
+	// PUT /api/categories/{id}
+	// DELETE /api/categories/{id}
+	http.HandleFunc(apiPrefix+"/categories/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			getCategoryByID(w, r)
