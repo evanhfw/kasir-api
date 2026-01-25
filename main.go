@@ -81,7 +81,7 @@ func respondError(w http.ResponseWriter, statusCode int, message string) {
 // @Accept       json
 // @Produce      json
 // @Success      200  {array}   Category
-// @Router       /category [get]
+// @Router       /categories [get]
 func getAllCategories(w http.ResponseWriter, _ *http.Request) {
 	respondJSON(w, http.StatusOK, categories)
 }
@@ -107,7 +107,7 @@ func getAllProducts(w http.ResponseWriter, _ *http.Request) {
 // @Param        category body Category true "Data kategori"
 // @Success      201  {object}  Category
 // @Failure      400  {object}  ErrorResponse
-// @Router       /category [post]
+// @Router       /categories [post]
 func createCategory(w http.ResponseWriter, r *http.Request) {
 	var newCategory Category
 	err := json.NewDecoder(r.Body).Decode(&newCategory)
@@ -275,9 +275,9 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 // @Success      200  {object}  Category
 // @Failure      400  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
-// @Router       /category/{id} [get]
+// @Router       /categories/{id} [get]
 func getCategoryByID(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, apiPrefix+"/category/")
+	idStr := strings.TrimPrefix(r.URL.Path, apiPrefix+"/categories/")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "Invalid category ID")
@@ -305,9 +305,9 @@ func getCategoryByID(w http.ResponseWriter, r *http.Request) {
 // @Success      200  {object}  Category
 // @Failure      400  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
-// @Router       /category/{id} [put]
+// @Router       /categories/{id} [put]
 func updateCategory(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, apiPrefix+"/category/")
+	idStr := strings.TrimPrefix(r.URL.Path, apiPrefix+"/categories/")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "Invalid category ID")
@@ -344,9 +344,9 @@ func updateCategory(w http.ResponseWriter, r *http.Request) {
 // @Success      200  {object}  SuccessResponse
 // @Failure      400  {object}  ErrorResponse
 // @Failure      404  {object}  ErrorResponse
-// @Router       /category/{id} [delete]
+// @Router       /categories/{id} [delete]
 func deleteCategory(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, apiPrefix+"/category/")
+	idStr := strings.TrimPrefix(r.URL.Path, apiPrefix+"/categories/")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, "Invalid category ID")
