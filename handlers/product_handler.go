@@ -20,8 +20,8 @@ func NewProductHandler(service *services.ProductService) *ProductHandler {
 }
 
 // HandleProducts 
-// GET /api/product
-// POST /api/product
+// GET /api/products
+// POST /api/products
 func (h *ProductHandler) HandleProducts(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -41,7 +41,7 @@ func (h *ProductHandler) HandleProducts(w http.ResponseWriter, r *http.Request) 
 // @Produce      json
 // @Success      200  {array}   models.Product
 // @Failure      500  {string}  string  "Failed to fetch products"
-// @Router       /product [get]
+// @Router       /products [get]
 func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	products, err := h.service.GetAll()
 	if err != nil {
@@ -63,7 +63,7 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Param        product  body      models.ProductInput  true  "Product data"
 // @Success      201      {object}  models.Product
 // @Failure      400      {string}  string  "Invalid request body"
-// @Router       /product [post]
+// @Router       /products [post]
 func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var product models.Product
 	if err := json.NewDecoder(r.Body).Decode(&product); err != nil {
@@ -83,9 +83,9 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandleProductByID
-// GET /api/product/{id}
-// PUT /api/product/{id}
-// DELETE /api/product/{id}
+// GET /api/products/{id}
+// PUT /api/products/{id}
+// DELETE /api/products/{id}
 func (h *ProductHandler) HandleProductByID(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -109,9 +109,9 @@ func (h *ProductHandler) HandleProductByID(w http.ResponseWriter, r *http.Reques
 // @Success      200  {object}  models.Product
 // @Failure      400  {string}  string  "Invalid product ID"
 // @Failure      404  {string}  string  "Product not found"
-// @Router       /product/{id} [get]
+// @Router       /products/{id} [get]
 func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	idstr := strings.TrimPrefix(r.URL.Path, "/api/product/")
+	idstr := strings.TrimPrefix(r.URL.Path, "/api/products/")
 	id, err := strconv.Atoi(idstr)
 	if err != nil {
 		http.Error(w, "Invalid product ID", http.StatusBadRequest)
@@ -139,9 +139,9 @@ func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Param        product  body      models.ProductInput  true  "Product data"
 // @Success      200      {object}  models.Product
 // @Failure      400      {string}  string  "Invalid product ID or request body"
-// @Router       /product/{id} [put]
+// @Router       /products/{id} [put]
 func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
-	idstr := strings.TrimPrefix(r.URL.Path, "/api/product/")
+	idstr := strings.TrimPrefix(r.URL.Path, "/api/products/")
 	id, err := strconv.Atoi(idstr)
 	if err != nil {
 		http.Error(w, "Invalid product ID", http.StatusBadRequest)
@@ -175,9 +175,9 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Param        id   path      int  true  "Product ID"
 // @Success      204  {string}  string  "Product deleted successfully"
 // @Failure      400  {string}  string  "Invalid product ID or failed to delete"
-// @Router       /product/{id} [delete]
+// @Router       /products/{id} [delete]
 func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/api/product/")
+	idStr := strings.TrimPrefix(r.URL.Path, "/api/products/")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "Invalid product ID", http.StatusBadRequest)

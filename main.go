@@ -70,8 +70,16 @@ func main() {
 	productService := services.NewProductService(productRepository)
 	productHandler := handlers.NewProductHandler(productService)
 
-	http.HandleFunc("/api/product", productHandler.HandleProducts)
-	http.HandleFunc("/api/product/", productHandler.HandleProductByID)
+	categoryRepository := repositories.NewCategoryRepository(db)
+	categoryService := services.NewCategoryService(categoryRepository)
+	categoryHandler := handlers.NewCategoryHandler(categoryService)
+
+	// Route Handlers
+	http.HandleFunc("/api/categories", categoryHandler.HandleCategories)
+	http.HandleFunc("/api/categories/", categoryHandler.HandleCategoryByID)
+
+	http.HandleFunc("/api/products", productHandler.HandleProducts)
+	http.HandleFunc("/api/products/", productHandler.HandleProductByID)
 
 	// Swagger UI
 	http.HandleFunc("/swagger/", httpSwagger.WrapHandler)

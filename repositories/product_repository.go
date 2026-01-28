@@ -69,12 +69,12 @@ func (r *ProductRepository) Update(product *models.Product) error {
 		return err
 	}
 
-	rows, err := result.RowsAffected()
+	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
 
-	if rows == 0 {
+	if rowsAffected == 0 {
 		return errors.New("product not found")
 	}
 	return nil
@@ -87,12 +87,12 @@ func (r *ProductRepository) Delete(id int) error {
 		return err
 	}
 
-	rows, err := result.RowsAffected()
+	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
 
-	if rows == 0 {
+	if rowsAffected == 0 {
 		return errors.New("product not found")
 	}
 	return nil
