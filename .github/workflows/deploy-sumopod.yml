@@ -34,8 +34,27 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
-          script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/kasir-api:latest
-            docker stop kasir-api || true
-            docker rm kasir-api || true
-            docker run -d --name kasir-api -p 8888:8080 ${{ secrets.DOCKER_USERNAME }}/kasir-api:latest
+          # Gunakan 'envs' untuk mengirim secrets ke environment SSH agar lebih aman
+          envs: DB_HOST,DB_USER,DB_PASS,JWT_SECRET
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        script: |
+          docker pull ${{ secrets.DOCKER_USERNAME }}/kasir-api:latest
+          docker stop kasir-api || true
+          docker rm kasir-api || true
+          
+          # 1. Buat file .env di server
+          echo "DB_HOST=$DB_HOST" > .env
+          echo "DB_USER=$DB_USER" >> .env
+          echo "DB_PASS=$DB_PASS" >> .env
+          echo "JWT_SECRET=$JWT_SECRET" >> .env
+          
+          # 2. Jalankan docker dengan membaca file .env tersebut
+          docker run -d \
+            --name kasir-api \
+            -p 8888:8080 \
+            --env-file .env \
+            ${{ secrets.DOCKER_USERNAME }}/kasir-api:latest
