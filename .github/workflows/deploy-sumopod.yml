@@ -30,27 +30,23 @@ jobs:
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
         env:
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASS: ${{ secrets.DB_PASS }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          DB_CONN: ${{ secrets.DB_CONN }}
+          PORT: ${{ secrets.PORT }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
           # Gunakan 'envs' untuk mengirim secrets ke environment SSH agar lebih aman
-          envs: DB_HOST,DB_USER,DB_PASS,JWT_SECRET
+          envs: DB_CONN,PORT
           script: |
             docker pull ${{ secrets.DOCKER_USERNAME }}/kasir-api:latest
             docker stop kasir-api || true
             docker rm kasir-api || true
             
             # 1. Buat file .env di server
-            echo "DB_HOST=$DB_HOST" > .env
-            echo "DB_USER=$DB_USER" >> .env
-            echo "DB_PASS=$DB_PASS" >> .env
-            echo "JWT_SECRET=$JWT_SECRET" >> .env
+            echo "DB_CONN=$DB_CONN" > .env
+            echo "PORT=$PORT" >> .env
             
             # 2. Jalankan docker dengan membaca file .env tersebut
             docker run -d \
