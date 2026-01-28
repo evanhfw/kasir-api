@@ -6,10 +6,10 @@ import (
 )
 
 type CategoryService struct {
-	r *repositories.CategoryRepository
+	r repositories.CategoryRepositoryInterface
 }
 
-func NewCategoryService(r *repositories.CategoryRepository) *CategoryService {
+func NewCategoryService(r repositories.CategoryRepositoryInterface) *CategoryService {
 	return &CategoryService{r: r}
 }
 

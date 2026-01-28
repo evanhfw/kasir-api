@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
-	"strconv"
-	"strings"
 
+	apperrors "kasir-api/errors"
 	"kasir-api/models"
 	"kasir-api/services"
 )
@@ -19,7 +19,7 @@ func NewProductHandler(service *services.ProductService) *ProductHandler {
 	return &ProductHandler{service: service}
 }
 
-// HandleProducts 
+// HandleProducts
 // GET /api/products
 // POST /api/products
 func (h *ProductHandler) HandleProducts(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +29,7 @@ func (h *ProductHandler) HandleProducts(w http.ResponseWriter, r *http.Request) 
 	case http.MethodPost:
 		h.Create(w, r)
 	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 }
 
@@ -46,12 +46,11 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	products, err := h.service.GetAll()
 	if err != nil {
 		log.Println("Error fetching products:", err)
-		http.Error(w, "Failed to fetch products", http.StatusInternalServerError)
+		WriteError(w, http.StatusInternalServerError, "Failed to fetch products")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(products)
+	WriteJSON(w, http.StatusOK, products)
 }
 
 // Create godoc
@@ -67,19 +66,17 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var product models.Product
 	if err := json.NewDecoder(r.Body).Decode(&product); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	if err := h.service.Create(&product); err != nil {
 		log.Println("Error creating product:", err)
-		http.Error(w, "Failed to create product", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, "Failed to create product")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(product)
+	WriteJSON(w, http.StatusCreated, product)
 }
 
 // HandleProductByID
@@ -95,7 +92,7 @@ func (h *ProductHandler) HandleProductByID(w http.ResponseWriter, r *http.Reques
 	case http.MethodDelete:
 		h.Delete(w, r)
 	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 }
 
@@ -111,22 +108,24 @@ func (h *ProductHandler) HandleProductByID(w http.ResponseWriter, r *http.Reques
 // @Failure      404  {string}  string  "Product not found"
 // @Router       /products/{id} [get]
 func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	idstr := strings.TrimPrefix(r.URL.Path, "/api/products/")
-	id, err := strconv.Atoi(idstr)
+	id, err := parseIDFromPath(r.URL.Path, "/api/products/")
 	if err != nil {
-		http.Error(w, "Invalid product ID", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, "Invalid product ID")
 		return
 	}
 
 	product, err := h.service.GetByID(id)
 	if err != nil {
 		log.Println("Error fetching product by ID:", err)
-		http.Error(w, "Product not found", http.StatusNotFound)
+		if errors.Is(err, apperrors.ErrNotFound) {
+			WriteError(w, http.StatusNotFound, "Product not found")
+			return
+		}
+		WriteError(w, http.StatusInternalServerError, "Failed to fetch product")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(product)
+	WriteJSON(w, http.StatusOK, product)
 }
 
 // Update godoc
@@ -141,29 +140,30 @@ func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Failure      400      {string}  string  "Invalid product ID or request body"
 // @Router       /products/{id} [put]
 func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
-	idstr := strings.TrimPrefix(r.URL.Path, "/api/products/")
-	id, err := strconv.Atoi(idstr)
+	id, err := parseIDFromPath(r.URL.Path, "/api/products/")
 	if err != nil {
-		http.Error(w, "Invalid product ID", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, "Invalid product ID")
 		return
 	}
 
 	var product models.Product
 	if err := json.NewDecoder(r.Body).Decode(&product); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	product.ID = id
 	if err := h.service.Update(&product); err != nil {
 		log.Println("Error updating product:", err)
-		http.Error(w, "Failed to update product", http.StatusBadRequest)
+		if errors.Is(err, apperrors.ErrNotFound) {
+			WriteError(w, http.StatusNotFound, "Product not found")
+			return
+		}
+		WriteError(w, http.StatusBadRequest, "Failed to update product")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(product)
-
+	WriteJSON(w, http.StatusOK, product)
 }
 
 // Delete godoc
@@ -173,24 +173,26 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      int  true  "Product ID"
-// @Success      204  {string}  string  "Product deleted successfully"
-// @Failure      400  {string}  string  "Invalid product ID or failed to delete"
+// @Success      200  {object}  handlers.APIResponse  "Product deleted successfully"
+// @Failure      400  {string}  string  "Invalid product ID"
+// @Failure      404  {string}  string  "Product not found"
 // @Router       /products/{id} [delete]
 func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/api/products/")
-	id, err := strconv.Atoi(idStr)
+	id, err := parseIDFromPath(r.URL.Path, "/api/products/")
 	if err != nil {
-		http.Error(w, "Invalid product ID", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, "Invalid product ID")
 		return
 	}
 
 	if err := h.service.Delete(id); err != nil {
 		log.Println("Error deleting product:", err)
-		http.Error(w, "Failed to delete product", http.StatusBadRequest)
+		if errors.Is(err, apperrors.ErrNotFound) {
+			WriteError(w, http.StatusNotFound, "Product not found")
+			return
+		}
+		WriteError(w, http.StatusBadRequest, "Failed to delete product")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNoContent)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Product deleted successfully"})
+	WriteJSON(w, http.StatusOK, map[string]string{"message": "Product deleted successfully"})
 }

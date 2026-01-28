@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
-	"kasir-api/models"
-	"kasir-api/services"
+	"errors"
 	"log"
 	"net/http"
-	"strconv"
-	"strings"
+
+	apperrors "kasir-api/errors"
+	"kasir-api/models"
+	"kasir-api/services"
 )
 
 type CategoryHandler struct {
@@ -18,7 +19,7 @@ func NewCategoryHandler(service *services.CategoryService) *CategoryHandler {
 	return &CategoryHandler{service: service}
 }
 
-// HandleCategories 
+// HandleCategories
 // GET /api/categories
 // POST /api/categories
 func (h *CategoryHandler) HandleCategories(w http.ResponseWriter, r *http.Request) {
@@ -28,7 +29,7 @@ func (h *CategoryHandler) HandleCategories(w http.ResponseWriter, r *http.Reques
 	case http.MethodPost:
 		h.Create(w, r)
 	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 }
 
@@ -44,12 +45,12 @@ func (h *CategoryHandler) HandleCategories(w http.ResponseWriter, r *http.Reques
 func (h *CategoryHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	categories, err := h.service.GetAll()
 	if err != nil {
-		http.Error(w, "Failed to fetch categories", http.StatusInternalServerError)
+		log.Println("Error fetching categories:", err)
+		WriteError(w, http.StatusInternalServerError, "Failed to fetch categories")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(categories)
+	WriteJSON(w, http.StatusOK, categories)
 }
 
 // Create godoc
@@ -65,21 +66,20 @@ func (h *CategoryHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var category models.Category
 	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	if err := h.service.Create(&category); err != nil {
-		http.Error(w, "Failed to create category", http.StatusInternalServerError)
+		log.Println("Error creating category:", err)
+		WriteError(w, http.StatusInternalServerError, "Failed to create category")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(category)
+	WriteJSON(w, http.StatusCreated, category)
 }
 
-// HandleProductByID
+// HandleCategoryByID
 // GET /api/categories/{id}
 // PUT /api/categories/{id}
 // DELETE /api/categories/{id}
@@ -92,7 +92,7 @@ func (h *CategoryHandler) HandleCategoryByID(w http.ResponseWriter, r *http.Requ
 	case http.MethodDelete:
 		h.Delete(w, r)
 	default:
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 }
 
@@ -108,22 +108,24 @@ func (h *CategoryHandler) HandleCategoryByID(w http.ResponseWriter, r *http.Requ
 // @Failure      404  {string}  string  "Category not found"
 // @Router       /categories/{id} [get]
 func (h *CategoryHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	idstr := strings.TrimPrefix(r.URL.Path, "/api/categories/")
-	id, err := strconv.Atoi(idstr)
+	id, err := parseIDFromPath(r.URL.Path, "/api/categories/")
 	if err != nil {
-		http.Error(w, "Invalid category ID", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, "Invalid category ID")
 		return
 	}
 
 	category, err := h.service.GetByID(id)
 	if err != nil {
 		log.Println("Error fetching category by ID:", err)
-		http.Error(w, "Category not found", http.StatusNotFound)
+		if errors.Is(err, apperrors.ErrNotFound) {
+			WriteError(w, http.StatusNotFound, "Category not found")
+			return
+		}
+		WriteError(w, http.StatusInternalServerError, "Failed to fetch category")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(category)
+	WriteJSON(w, http.StatusOK, category)
 }
 
 // Update godoc
@@ -138,28 +140,30 @@ func (h *CategoryHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Failure      400       {string}  string  "Invalid category ID or request body"
 // @Router       /categories/{id} [put]
 func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
-	idstr := strings.TrimPrefix(r.URL.Path, "/api/categories/")
-	id, err := strconv.Atoi(idstr)
+	id, err := parseIDFromPath(r.URL.Path, "/api/categories/")
 	if err != nil {
-		http.Error(w, "Invalid category ID", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, "Invalid category ID")
 		return
 	}
 
 	var category models.Category
 	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	category.ID = id
 	if err := h.service.Update(&category); err != nil {
 		log.Println("Error updating category:", err)
-		http.Error(w, "Failed to update category", http.StatusInternalServerError)
+		if errors.Is(err, apperrors.ErrNotFound) {
+			WriteError(w, http.StatusNotFound, "Category not found")
+			return
+		}
+		WriteError(w, http.StatusInternalServerError, "Failed to update category")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(category)
+	WriteJSON(w, http.StatusOK, category)
 }
 
 // Delete godoc
@@ -169,25 +173,27 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      int  true  "Category ID"
-// @Success      204  {string}  string  "Category deleted successfully"
+// @Success      200  {object}  handlers.APIResponse  "Category deleted successfully"
 // @Failure      400  {string}  string  "Invalid category ID"
+// @Failure      404  {string}  string  "Category not found"
 // @Failure      500  {string}  string  "Failed to delete category"
 // @Router       /categories/{id} [delete]
 func (h *CategoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/api/categories/")
-	id, err := strconv.Atoi(idStr)
+	id, err := parseIDFromPath(r.URL.Path, "/api/categories/")
 	if err != nil {
-		http.Error(w, "Invalid category ID", http.StatusBadRequest)
+		WriteError(w, http.StatusBadRequest, "Invalid category ID")
 		return
 	}
 
 	if err := h.service.Delete(id); err != nil {
 		log.Println("Error deleting category:", err)
-		http.Error(w, "Failed to delete category", http.StatusInternalServerError)
+		if errors.Is(err, apperrors.ErrNotFound) {
+			WriteError(w, http.StatusNotFound, "Category not found")
+			return
+		}
+		WriteError(w, http.StatusInternalServerError, "Failed to delete category")
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNoContent)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Category deleted successfully"})
+	WriteJSON(w, http.StatusOK, map[string]string{"message": "Category deleted successfully"})
 }

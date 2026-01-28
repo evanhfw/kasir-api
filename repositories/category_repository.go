@@ -2,7 +2,8 @@ package repositories
 
 import (
 	"database/sql"
-	"errors"
+
+	apperrors "kasir-api/errors"
 	"kasir-api/models"
 )
 
@@ -54,7 +55,7 @@ func (r *CategoryRepository) GetByID(id int) (*models.Category, error) {
 	var c models.Category
 	if err := row.Scan(&c.ID, &c.Name, &c.Description); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.New("category not found")
+			return nil, apperrors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -74,7 +75,7 @@ func (r *CategoryRepository) Update(category *models.Category) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return errors.New("category not found")
+		return apperrors.ErrNotFound
 	}
 
 	return nil
@@ -92,7 +93,7 @@ func (r *CategoryRepository) Delete(id int) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return errors.New("category not found")
+		return apperrors.ErrNotFound
 	}
 
 	return nil

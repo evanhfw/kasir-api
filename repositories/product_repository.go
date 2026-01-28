@@ -2,7 +2,8 @@ package repositories
 
 import (
 	"database/sql"
-	"errors"
+
+	apperrors "kasir-api/errors"
 	"kasir-api/models"
 )
 
@@ -54,7 +55,7 @@ func (r *ProductRepository) GetByID(id int) (*models.Product, error) {
 	var p models.Product
 	if err := row.Scan(&p.ID, &p.Name, &p.Price, &p.Stock); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errors.New("product not found") // Not found
+			return nil, apperrors.ErrNotFound
 		}
 		return nil, err
 	}
@@ -75,7 +76,7 @@ func (r *ProductRepository) Update(product *models.Product) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("product not found")
+		return apperrors.ErrNotFound
 	}
 	return nil
 }
@@ -93,7 +94,7 @@ func (r *ProductRepository) Delete(id int) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("product not found")
+		return apperrors.ErrNotFound
 	}
 	return nil
 }

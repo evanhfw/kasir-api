@@ -6,10 +6,10 @@ import (
 )
 
 type ProductService struct {
-	r *repositories.ProductRepository
+	r repositories.ProductRepositoryInterface
 }
 
-func NewProductService(r *repositories.ProductRepository) *ProductService {
+func NewProductService(r repositories.ProductRepositoryInterface) *ProductService {
 	return &ProductService{r: r}
 }
 
