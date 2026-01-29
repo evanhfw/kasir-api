@@ -62,6 +62,7 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Param        product  body      models.ProductInput  true  "Product data"
 // @Success      201      {object}  models.Product
 // @Failure      400      {string}  string  "Invalid request body"
+// @Failure      400      {string}  string  "Category not found"
 // @Router       /products [post]
 func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var product models.Product
@@ -72,6 +73,10 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.service.Create(&product); err != nil {
 		log.Println("Error creating product:", err)
+		if errors.Is(err, apperrors.ErrCategoryNotFound) {
+			WriteError(w, http.StatusBadRequest, "Category not found")
+			return
+		}
 		WriteError(w, http.StatusBadRequest, "Failed to create product")
 		return
 	}
@@ -138,6 +143,7 @@ func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Param        product  body      models.ProductInput  true  "Product data"
 // @Success      200      {object}  models.Product
 // @Failure      400      {string}  string  "Invalid product ID or request body"
+// @Failure      400      {string}  string  "Category not found"
 // @Router       /products/{id} [put]
 func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 	id, err := parseIDFromPath(r.URL.Path, "/api/products/")
@@ -157,6 +163,10 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error updating product:", err)
 		if errors.Is(err, apperrors.ErrNotFound) {
 			WriteError(w, http.StatusNotFound, "Product not found")
+			return
+		}
+		if errors.Is(err, apperrors.ErrCategoryNotFound) {
+			WriteError(w, http.StatusBadRequest, "Category not found")
 			return
 		}
 		WriteError(w, http.StatusBadRequest, "Failed to update product")

@@ -15,4 +15,7 @@ var (
 
 	// ErrInternal is returned when an internal server error occurs
 	ErrInternal = errors.New("internal server error")
+
+	// ErrCategoryNotFound is returned when the specified category does not exist
+	ErrCategoryNotFound = errors.New("category not found")
 )

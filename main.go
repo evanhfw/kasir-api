@@ -67,10 +67,11 @@ func main() {
 	defer db.Close()
 
 	productRepository := repositories.NewProductRepository(db)
-	productService := services.NewProductService(productRepository)
+	categoryRepository := repositories.NewCategoryRepository(db)
+
+	productService := services.NewProductService(productRepository, categoryRepository)
 	productHandler := handlers.NewProductHandler(productService)
 
-	categoryRepository := repositories.NewCategoryRepository(db)
 	categoryService := services.NewCategoryService(categoryRepository)
 	categoryHandler := handlers.NewCategoryHandler(categoryService)
 

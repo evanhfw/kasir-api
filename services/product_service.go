@@ -1,16 +1,20 @@
 package services
 
 import (
+	"errors"
+
+	apperrors "kasir-api/errors"
 	"kasir-api/models"
 	"kasir-api/repositories"
 )
 
 type ProductService struct {
-	r repositories.ProductRepositoryInterface
+	r        repositories.ProductRepositoryInterface
+	categoryRepo repositories.CategoryRepositoryInterface
 }
 
-func NewProductService(r repositories.ProductRepositoryInterface) *ProductService {
-	return &ProductService{r: r}
+func NewProductService(r repositories.ProductRepositoryInterface, categoryRepo repositories.CategoryRepositoryInterface) *ProductService {
+	return &ProductService{r: r, categoryRepo: categoryRepo}
 }
 
 func (s *ProductService) GetAll() ([]models.Product, error) {
@@ -18,6 +22,14 @@ func (s *ProductService) GetAll() ([]models.Product, error) {
 }
 
 func (s *ProductService) Create(product *models.Product) error {
+	// Validate category exists
+	_, err := s.categoryRepo.GetByID(product.CategoryID)
+	if err != nil {
+		if errors.Is(err, apperrors.ErrNotFound) {
+			return apperrors.ErrCategoryNotFound
+		}
+		return err
+	}
 	return s.r.Create(product)
 }
 
@@ -26,6 +38,14 @@ func (s *ProductService) GetByID(id int) (*models.Product, error) {
 }
 
 func (s *ProductService) Update(product *models.Product) error {
+	// Validate category exists
+	_, err := s.categoryRepo.GetByID(product.CategoryID)
+	if err != nil {
+		if errors.Is(err, apperrors.ErrNotFound) {
+			return apperrors.ErrCategoryNotFound
+		}
+		return err
+	}
 	return s.r.Update(product)
 }
 
