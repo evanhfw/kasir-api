@@ -1,21 +1,22 @@
-package repositories
+package repository
 
 import (
 	"database/sql"
 
-	apperrors "kasir-api/errors"
-	"kasir-api/models"
+	"kasir-api/internal/apperrors"
+	"kasir-api/internal/domain"
 )
 
-type CategoryRepository struct {
+type categoryRepository struct {
 	db *sql.DB
 }
 
-func NewCategoryRepository(db *sql.DB) *CategoryRepository {
-	return &CategoryRepository{db: db}
+// NewCategoryRepository creates a new category repository
+func NewCategoryRepository(db *sql.DB) CategoryRepository {
+	return &categoryRepository{db: db}
 }
 
-func (r *CategoryRepository) GetAll() ([]models.Category, error) {
+func (r *categoryRepository) GetAll() ([]domain.Category, error) {
 	query := "SELECT id, name, description FROM categories"
 	rows, err := r.db.Query(query)
 	if err != nil {
@@ -23,9 +24,9 @@ func (r *CategoryRepository) GetAll() ([]models.Category, error) {
 	}
 	defer rows.Close()
 
-	categories := make([]models.Category, 0)
+	categories := make([]domain.Category, 0)
 	for rows.Next() {
-		var c models.Category
+		var c domain.Category
 		if err := rows.Scan(&c.ID, &c.Name, &c.Description); err != nil {
 			return nil, err
 		}
@@ -39,7 +40,7 @@ func (r *CategoryRepository) GetAll() ([]models.Category, error) {
 	return categories, nil
 }
 
-func (r *CategoryRepository) Create(category *models.Category) error {
+func (r *categoryRepository) Create(category *domain.Category) error {
 	query := "INSERT INTO categories (name, description) VALUES ($1, $2) RETURNING id"
 	err := r.db.QueryRow(query, category.Name, category.Description).Scan(&category.ID)
 	if err != nil {
@@ -48,11 +49,11 @@ func (r *CategoryRepository) Create(category *models.Category) error {
 	return nil
 }
 
-func (r *CategoryRepository) GetByID(id int) (*models.Category, error) {
+func (r *categoryRepository) GetByID(id int) (*domain.Category, error) {
 	query := "SELECT id, name, description FROM categories WHERE id = $1"
 	row := r.db.QueryRow(query, id)
 
-	var c models.Category
+	var c domain.Category
 	if err := row.Scan(&c.ID, &c.Name, &c.Description); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, apperrors.ErrNotFound
@@ -63,7 +64,7 @@ func (r *CategoryRepository) GetByID(id int) (*models.Category, error) {
 	return &c, nil
 }
 
-func (r *CategoryRepository) Update(category *models.Category) error {
+func (r *categoryRepository) Update(category *domain.Category) error {
 	query := "UPDATE categories SET name = $1, description = $2 WHERE id = $3"
 	result, err := r.db.Exec(query, category.Name, category.Description, category.ID)
 	if err != nil {
@@ -81,7 +82,7 @@ func (r *CategoryRepository) Update(category *models.Category) error {
 	return nil
 }
 
-func (r *CategoryRepository) Delete(id int) error {
+func (r *categoryRepository) Delete(id int) error {
 	query := "DELETE FROM categories WHERE id = $1"
 	result, err := r.db.Exec(query, id)
 	if err != nil {

@@ -1,4 +1,4 @@
-package models
+package domain
 
 // Product represents a product in the store
 // @Description Product information

@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"encoding/json"
@@ -6,22 +6,22 @@ import (
 	"log"
 	"net/http"
 
-	apperrors "kasir-api/errors"
-	"kasir-api/models"
-	"kasir-api/services"
+	"kasir-api/internal/apperrors"
+	"kasir-api/internal/domain"
+	"kasir-api/internal/service"
 )
 
+// CategoryHandler handles HTTP requests for categories
 type CategoryHandler struct {
-	service *services.CategoryService
+	service *service.CategoryService
 }
 
-func NewCategoryHandler(service *services.CategoryService) *CategoryHandler {
+// NewCategoryHandler creates a new category handler
+func NewCategoryHandler(service *service.CategoryService) *CategoryHandler {
 	return &CategoryHandler{service: service}
 }
 
-// HandleCategories
-// GET /api/categories
-// POST /api/categories
+// HandleCategories handles GET and POST requests for /api/categories
 func (h *CategoryHandler) HandleCategories(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -39,7 +39,7 @@ func (h *CategoryHandler) HandleCategories(w http.ResponseWriter, r *http.Reques
 // @Tags         categories
 // @Accept       json
 // @Produce      json
-// @Success      200  {array}   models.Category
+// @Success      200  {array}   domain.Category
 // @Failure      500  {string}  string  "Failed to fetch categories"
 // @Router       /categories [get]
 func (h *CategoryHandler) GetAll(w http.ResponseWriter, r *http.Request) {
@@ -59,12 +59,12 @@ func (h *CategoryHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Tags         categories
 // @Accept       json
 // @Produce      json
-// @Param        category  body      models.CategoryInput  true  "Category data"
-// @Success      201       {object}  models.Category
+// @Param        category  body      domain.CategoryInput  true  "Category data"
+// @Success      201       {object}  domain.Category
 // @Failure      400       {string}  string  "Invalid request body"
 // @Router       /categories [post]
 func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var category models.Category
+	var category domain.Category
 	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
 		WriteError(w, http.StatusBadRequest, "Invalid request body")
 		return
@@ -79,10 +79,7 @@ func (h *CategoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusCreated, category)
 }
 
-// HandleCategoryByID
-// GET /api/categories/{id}
-// PUT /api/categories/{id}
-// DELETE /api/categories/{id}
+// HandleCategoryByID handles GET, PUT, DELETE requests for /api/categories/{id}
 func (h *CategoryHandler) HandleCategoryByID(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -103,7 +100,7 @@ func (h *CategoryHandler) HandleCategoryByID(w http.ResponseWriter, r *http.Requ
 // @Accept       json
 // @Produce      json
 // @Param        id   path      int  true  "Category ID"
-// @Success      200  {object}  models.Category
+// @Success      200  {object}  domain.Category
 // @Failure      400  {string}  string  "Invalid category ID"
 // @Failure      404  {string}  string  "Category not found"
 // @Router       /categories/{id} [get]
@@ -135,8 +132,8 @@ func (h *CategoryHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Param        id        path      int                   true  "Category ID"
-// @Param        category  body      models.CategoryInput  true  "Category data"
-// @Success      200       {object}  models.Category
+// @Param        category  body      domain.CategoryInput  true  "Category data"
+// @Success      200       {object}  domain.Category
 // @Failure      400       {string}  string  "Invalid category ID or request body"
 // @Router       /categories/{id} [put]
 func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -146,7 +143,7 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var category models.Category
+	var category domain.Category
 	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
 		WriteError(w, http.StatusBadRequest, "Invalid request body")
 		return
@@ -173,7 +170,7 @@ func (h *CategoryHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      int  true  "Category ID"
-// @Success      200  {object}  handlers.APIResponse  "Category deleted successfully"
+// @Success      200  {object}  handler.APIResponse  "Category deleted successfully"
 // @Failure      400  {string}  string  "Invalid category ID"
 // @Failure      404  {string}  string  "Category not found"
 // @Failure      500  {string}  string  "Failed to delete category"

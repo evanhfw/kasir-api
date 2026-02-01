@@ -1,4 +1,4 @@
-.PHONY: build run stop restart logs clean test help
+.PHONY: build run stop restart logs clean test help dev swagger
 
 APP_NAME=kasir-api
 DOCKER_IMAGE=$(APP_NAME):latest
@@ -6,6 +6,14 @@ DOCKER_IMAGE=$(APP_NAME):latest
 build:
 	@echo "Building Docker image..."
 	docker build -t $(DOCKER_IMAGE) .
+
+dev:
+	@echo "Running locally..."
+	go run ./cmd/api
+
+swagger:
+	@echo "Generating swagger docs..."
+	swag init -g cmd/api/main.go -o docs
 
 run:
 	@echo "Starting application..."
@@ -42,6 +50,8 @@ test-all:
 help:
 	@echo "Available commands:"
 	@echo "  make build     - Build Docker image"
+	@echo "  make dev       - Run application locally"
+	@echo "  make swagger   - Generate swagger docs"
 	@echo "  make run       - Start application with docker-compose"
 	@echo "  make stop      - Stop application"
 	@echo "  make restart   - Restart application"

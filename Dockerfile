@@ -14,10 +14,10 @@ COPY . .
 
 # Install swag CLI and generate swagger docs
 RUN go install github.com/swaggo/swag/cmd/swag@latest && \
-    swag init
+    swag init -g cmd/api/main.go -o docs
 
 # Build binary
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-s -w" -o kasir-api .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags="-s -w" -o kasir-api ./cmd/api
 
 # Stage 2: Runtime
 FROM alpine:latest

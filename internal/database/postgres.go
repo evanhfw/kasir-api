@@ -8,14 +8,13 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// InitDB initializes and returns a database connection
 func InitDB(connectionString string) (*sql.DB, error) {
-	// Open database
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
 		return nil, err
 	}
 
-	// Test connection
 	if err = db.Ping(); err != nil {
 		return nil, err
 	}

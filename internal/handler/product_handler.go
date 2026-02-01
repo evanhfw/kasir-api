@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"encoding/json"
@@ -6,22 +6,22 @@ import (
 	"log"
 	"net/http"
 
-	apperrors "kasir-api/errors"
-	"kasir-api/models"
-	"kasir-api/services"
+	"kasir-api/internal/apperrors"
+	"kasir-api/internal/domain"
+	"kasir-api/internal/service"
 )
 
+// ProductHandler handles HTTP requests for products
 type ProductHandler struct {
-	service *services.ProductService
+	service *service.ProductService
 }
 
-func NewProductHandler(service *services.ProductService) *ProductHandler {
+// NewProductHandler creates a new product handler
+func NewProductHandler(service *service.ProductService) *ProductHandler {
 	return &ProductHandler{service: service}
 }
 
-// HandleProducts
-// GET /api/products
-// POST /api/products
+// HandleProducts handles GET and POST requests for /api/products
 func (h *ProductHandler) HandleProducts(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -39,7 +39,7 @@ func (h *ProductHandler) HandleProducts(w http.ResponseWriter, r *http.Request) 
 // @Tags         products
 // @Accept       json
 // @Produce      json
-// @Success      200  {array}   models.Product
+// @Success      200  {array}   domain.Product
 // @Failure      500  {string}  string  "Failed to fetch products"
 // @Router       /products [get]
 func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
@@ -59,13 +59,13 @@ func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Tags         products
 // @Accept       json
 // @Produce      json
-// @Param        product  body      models.ProductInput  true  "Product data"
-// @Success      201      {object}  models.Product
+// @Param        product  body      domain.ProductInput  true  "Product data"
+// @Success      201      {object}  domain.Product
 // @Failure      400      {string}  string  "Invalid request body"
 // @Failure      400      {string}  string  "Category not found"
 // @Router       /products [post]
 func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var product models.Product
+	var product domain.Product
 	if err := json.NewDecoder(r.Body).Decode(&product); err != nil {
 		WriteError(w, http.StatusBadRequest, "Invalid request body")
 		return
@@ -84,10 +84,7 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusCreated, product)
 }
 
-// HandleProductByID
-// GET /api/products/{id}
-// PUT /api/products/{id}
-// DELETE /api/products/{id}
+// HandleProductByID handles GET, PUT, DELETE requests for /api/products/{id}
 func (h *ProductHandler) HandleProductByID(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -108,7 +105,7 @@ func (h *ProductHandler) HandleProductByID(w http.ResponseWriter, r *http.Reques
 // @Accept       json
 // @Produce      json
 // @Param        id   path      int  true  "Product ID"
-// @Success      200  {object}  models.Product
+// @Success      200  {object}  domain.Product
 // @Failure      400  {string}  string  "Invalid product ID"
 // @Failure      404  {string}  string  "Product not found"
 // @Router       /products/{id} [get]
@@ -140,8 +137,8 @@ func (h *ProductHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Param        id       path      int                  true  "Product ID"
-// @Param        product  body      models.ProductInput  true  "Product data"
-// @Success      200      {object}  models.Product
+// @Param        product  body      domain.ProductInput  true  "Product data"
+// @Success      200      {object}  domain.Product
 // @Failure      400      {string}  string  "Invalid product ID or request body"
 // @Failure      400      {string}  string  "Category not found"
 // @Router       /products/{id} [put]
@@ -152,7 +149,7 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var product models.Product
+	var product domain.Product
 	if err := json.NewDecoder(r.Body).Decode(&product); err != nil {
 		WriteError(w, http.StatusBadRequest, "Invalid request body")
 		return
@@ -183,7 +180,7 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      int  true  "Product ID"
-// @Success      200  {object}  handlers.APIResponse  "Product deleted successfully"
+// @Success      200  {object}  handler.APIResponse  "Product deleted successfully"
 // @Failure      400  {string}  string  "Invalid product ID"
 // @Failure      404  {string}  string  "Product not found"
 // @Router       /products/{id} [delete]

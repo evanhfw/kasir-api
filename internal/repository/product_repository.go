@@ -1,21 +1,22 @@
-package repositories
+package repository
 
 import (
 	"database/sql"
 
-	apperrors "kasir-api/errors"
-	"kasir-api/models"
+	"kasir-api/internal/apperrors"
+	"kasir-api/internal/domain"
 )
 
-type ProductRepository struct {
+type productRepository struct {
 	db *sql.DB
 }
 
-func NewProductRepository(db *sql.DB) *ProductRepository {
-	return &ProductRepository{db: db}
+// NewProductRepository creates a new product repository
+func NewProductRepository(db *sql.DB) ProductRepository {
+	return &productRepository{db: db}
 }
 
-func (r *ProductRepository) GetAll() ([]models.Product, error) {
+func (r *productRepository) GetAll() ([]domain.Product, error) {
 	query := `
 		SELECT p.id, p.name, p.price, p.stock, p.category_id,
 		       c.id, c.name, c.description
@@ -28,10 +29,10 @@ func (r *ProductRepository) GetAll() ([]models.Product, error) {
 	}
 	defer rows.Close()
 
-	products := make([]models.Product, 0)
+	products := make([]domain.Product, 0)
 	for rows.Next() {
-		var p models.Product
-		var c models.Category
+		var p domain.Product
+		var c domain.Category
 		if err := rows.Scan(&p.ID, &p.Name, &p.Price, &p.Stock, &p.CategoryID,
 			&c.ID, &c.Name, &c.Description); err != nil {
 			return nil, err
@@ -47,7 +48,7 @@ func (r *ProductRepository) GetAll() ([]models.Product, error) {
 	return products, nil
 }
 
-func (r *ProductRepository) Create(product *models.Product) error {
+func (r *productRepository) Create(product *domain.Product) error {
 	query := "INSERT INTO products (name, price, stock, category_id) VALUES ($1, $2, $3, $4) RETURNING id"
 	err := r.db.QueryRow(query, product.Name, product.Price, product.Stock, product.CategoryID).Scan(&product.ID)
 	if err != nil {
@@ -56,7 +57,7 @@ func (r *ProductRepository) Create(product *models.Product) error {
 	return nil
 }
 
-func (r *ProductRepository) GetByID(id int) (*models.Product, error) {
+func (r *productRepository) GetByID(id int) (*domain.Product, error) {
 	query := `
 		SELECT p.id, p.name, p.price, p.stock, p.category_id,
 		       c.id, c.name, c.description
@@ -66,8 +67,8 @@ func (r *ProductRepository) GetByID(id int) (*models.Product, error) {
 	`
 	row := r.db.QueryRow(query, id)
 
-	var p models.Product
-	var c models.Category
+	var p domain.Product
+	var c domain.Category
 	if err := row.Scan(&p.ID, &p.Name, &p.Price, &p.Stock, &p.CategoryID,
 		&c.ID, &c.Name, &c.Description); err != nil {
 		if err == sql.ErrNoRows {
@@ -80,7 +81,7 @@ func (r *ProductRepository) GetByID(id int) (*models.Product, error) {
 	return &p, nil
 }
 
-func (r *ProductRepository) Update(product *models.Product) error {
+func (r *productRepository) Update(product *domain.Product) error {
 	query := "UPDATE products SET name = $1, price = $2, stock = $3, category_id = $4 WHERE id = $5"
 	result, err := r.db.Exec(query, product.Name, product.Price, product.Stock, product.CategoryID, product.ID)
 	if err != nil {
@@ -98,7 +99,7 @@ func (r *ProductRepository) Update(product *models.Product) error {
 	return nil
 }
 
-func (r *ProductRepository) Delete(id int) error {
+func (r *productRepository) Delete(id int) error {
 	query := "DELETE FROM products WHERE id = $1"
 	result, err := r.db.Exec(query, id)
 	if err != nil {
