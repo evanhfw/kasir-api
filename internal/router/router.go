@@ -13,7 +13,7 @@ func New(productHandler *handler.ProductHandler, categoryHandler *handler.Catego
 	mux := http.NewServeMux()
 
 	// Health check
-	mux.HandleFunc("/health", healthHandler.Health)
+	mux.HandleFunc("/api/health", healthHandler.Health)
 
 	// Category routes
 	mux.HandleFunc("/api/categories", categoryHandler.HandleCategories)
