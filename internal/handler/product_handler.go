@@ -43,7 +43,9 @@ func (h *ProductHandler) HandleProducts(w http.ResponseWriter, r *http.Request) 
 // @Failure      500  {string}  string  "Failed to fetch products"
 // @Router       /products [get]
 func (h *ProductHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	products, err := h.service.GetAll()
+	name := r.URL.Query().Get("name")
+
+	products, err := h.service.GetAll(name)
 	if err != nil {
 		log.Println("Error fetching products:", err)
 		WriteError(w, http.StatusInternalServerError, "Failed to fetch products")

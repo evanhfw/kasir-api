@@ -50,18 +50,24 @@ func main() {
 	// Initialize repositories
 	productRepo := repository.NewProductRepository(db)
 	categoryRepo := repository.NewCategoryRepository(db)
+	transactionRepo := repository.NewTransactionRepository(db)
+	reportRepo := repository.NewReportRepository(db)
 
 	// Initialize services
 	productService := service.NewProductService(productRepo, categoryRepo)
 	categoryService := service.NewCategoryService(categoryRepo)
+	transactionService := service.NewTransactionService(transactionRepo)
+	reportService := service.NewReportService(reportRepo)
 
 	// Initialize handlers
 	productHandler := handler.NewProductHandler(productService)
 	categoryHandler := handler.NewCategoryHandler(categoryService)
+	transactionHandler := handler.NewTransactionHandler(transactionService)
 	healthHandler := handler.NewHealthHandler(db)
+	reportHandler := handler.NewReportHandler(reportService)
 
 	// Setup router
-	r := router.New(productHandler, categoryHandler, healthHandler)
+	r := router.New(productHandler, categoryHandler, transactionHandler, healthHandler, reportHandler)
 
 	// Start server
 	addr := "0.0.0.0:" + cfg.Port

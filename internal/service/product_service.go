@@ -22,8 +22,8 @@ func NewProductService(productRepo repository.ProductRepository, categoryRepo re
 	}
 }
 
-func (s *ProductService) GetAll() ([]domain.Product, error) {
-	return s.productRepo.GetAll()
+func (s *ProductService) GetAll(name string) ([]domain.Product, error) {
+	return s.productRepo.GetAll(name)
 }
 
 func (s *ProductService) Create(product *domain.Product) error {
